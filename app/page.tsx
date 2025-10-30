@@ -96,8 +96,8 @@ export default function Home() {
   };
 
   return (
-    <div className="min-h-dvh w-full bg-gradient-to-b from-pink-50 via-white to-indigo-50 dark:from-zinc-900 dark:via-black dark:to-zinc-900 flex items-center justify-center px-4 sm:px-6 py-6 sm:py-10 pt-[env(safe-area-inset-top)] pb-[env(safe-area-inset-bottom)] pl-[env(safe-area-inset-left)] pr-[env(safe-area-inset-right)]">
-      <main className="w-full max-w-2xl rounded-2xl bg-white/80 dark:bg-white/5 backdrop-blur-lg shadow-2xl p-4 sm:p-6 md:p-8">
+    <div className="min-h-dvh w-full bg-gradient-to-b from-pink-50 via-white to-indigo-50 dark:from-zinc-900 dark:via-black dark:to-zinc-900 flex items-stretch justify-stretch sm:items-center sm:justify-center px-4 sm:px-6 py-6 sm:py-10 pt-[env(safe-area-inset-top)] pb-[env(safe-area-inset-bottom)] pl-[env(safe-area-inset-left)] pr-[env(safe-area-inset-right)]">
+      <main className="w-full max-w-2xl h-dvh sm:h-auto flex flex-col rounded-2xl bg-white/80 dark:bg-white/5 backdrop-blur-lg shadow-2xl p-4 sm:p-6 md:p-8">
         {loading ? (
           <div className="flex flex-col items-center justify-center gap-4 py-12 sm:py-16" aria-live="polite">
             <div className="h-12 w-12 sm:h-14 sm:w-14 animate-spin rounded-full border-4 border-zinc-200 border-t-pink-500 dark:border-zinc-800 dark:border-t-pink-400" />
