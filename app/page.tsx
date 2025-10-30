@@ -26,24 +26,62 @@ export default function Home() {
     const containerRect = container.getBoundingClientRect();
     const btnRect = noBtn.getBoundingClientRect();
 
-    // Random new position away from the pointer
-    const padding = mode === "touch" ? 4 : 8;
+    // Bounds and padding
+    const padding = mode === "touch" ? 8 : 8;
     const maxLeft = containerRect.width - btnRect.width - padding;
     const maxTop = containerRect.height - btnRect.height - padding;
 
-    // Compute a position opposite to the pointer with some randomness
+    // Current button center relative to container
+    const btnCenterX = btnRect.left - containerRect.left + btnRect.width / 2;
+    const btnCenterY = btnRect.top - containerRect.top + btnRect.height / 2;
+
+    // Pointer relative to container
     const relX = clientX - containerRect.left;
     const relY = clientY - containerRect.top;
-    let newLeft = relX < containerRect.width / 2 ? maxLeft : padding;
-    let newTop = relY < containerRect.height / 2 ? maxTop : padding;
 
-    // Add playful jitter
-    const jitterX = mode === "touch" ? (Math.random() * 260 - 130) : (Math.random() * 120 - 60);
-    const jitterY = mode === "touch" ? (Math.random() * 180 - 90) : (Math.random() * 90 - 45);
-    newLeft = Math.min(maxLeft, Math.max(padding, newLeft + jitterX));
-    newTop = Math.min(maxTop, Math.max(padding, newTop + jitterY));
+    // Escape vector from pointer to button center
+    let dx = btnCenterX - relX;
+    let dy = btnCenterY - relY;
+    const len = Math.max(1, Math.hypot(dx, dy));
+    dx /= len;
+    dy /= len;
 
-    // Switch to absolute positioning inside the container when evading
+    // Larger playful distance on touch
+    const baseMin = mode === "touch" ? 180 : 140;
+    const baseMax = mode === "touch" ? 320 : 220;
+    const distance = baseMin + Math.random() * (baseMax - baseMin);
+
+    // Add some random angular variation
+    const angleJitter = (Math.random() - 0.5) * (Math.PI / 3); // +/- 30deg
+    const cos = Math.cos(angleJitter);
+    const sin = Math.sin(angleJitter);
+    const jx = dx * cos - dy * sin;
+    const jy = dx * sin + dy * cos;
+
+    // Proposed new center position
+    let proposedX = btnCenterX + jx * distance;
+    let proposedY = btnCenterY + jy * distance;
+
+    // Convert to top-left and clamp
+    let newLeft = Math.min(maxLeft, Math.max(padding, proposedX - btnRect.width / 2));
+    let newTop = Math.min(maxTop, Math.max(padding, proposedY - btnRect.height / 2));
+
+    // If still too close to the pointer, jump to a random quadrant
+    const proximity = mode === "touch" ? 110 : 80;
+    const nearPointer =
+      relX > newLeft - proximity &&
+      relX < newLeft + btnRect.width + proximity &&
+      relY > newTop - proximity &&
+      relY < newTop + btnRect.height + proximity;
+
+    if (nearPointer) {
+      const targetLeft = Math.random() < 0.5 ? padding : maxLeft;
+      const targetTop = Math.random() < 0.5 ? padding : maxTop;
+      // add random inward offset
+      newLeft = Math.min(maxLeft, Math.max(padding, targetLeft + (Math.random() * 80 - 40)));
+      newTop = Math.min(maxTop, Math.max(padding, targetTop + (Math.random() * 80 - 40)));
+    }
+
     if (!isNoAbsolute) setIsNoAbsolute(true);
     noBtn.style.left = `${newLeft}px`;
     noBtn.style.top = `${newTop}px`;
@@ -93,14 +131,14 @@ export default function Home() {
 
   return (
     <div className="min-h-dvh w-full bg-gradient-to-b from-pink-50 via-white to-indigo-50 dark:from-zinc-900 dark:via-black dark:to-zinc-900 flex items-center justify-center px-4 sm:px-6 py-6 sm:py-10 pt-[env(safe-area-inset-top)] pb-[env(safe-area-inset-bottom)] pl-[env(safe-area-inset-left)] pr-[env(safe-area-inset-right)]">
-      <main className="w-full max-w-2xl h-dvh sm:h-auto flex flex-col rounded-2xl bg-white/80 dark:bg-white/5 backdrop-blur-lg shadow-2xl p-4 sm:p-6 md:p-8">
+      <main className="w-full max-w-2xl h-dvh flex flex-col items-center justify-center rounded-2xl bg-white/80 dark:bg-white/5 backdrop-blur-lg shadow-2xl p-4 sm:p-6 md:p-8">
         {loading ? (
           <div className="flex flex-col items-center justify-center gap-4 py-12 sm:py-16" aria-live="polite">
             <div className="h-12 w-12 sm:h-14 sm:w-14 animate-spin rounded-full border-4 border-zinc-200 border-t-pink-500 dark:border-zinc-800 dark:border-t-pink-400" />
             <p className="text-base sm:text-lg font-semibold text-zinc-700 dark:text-zinc-200">Scanning availability...</p>
           </div>
         ) : (
-          <div className="flex flex-col items-center text-center sm:items-start sm:text-left">
+          <div className="flex flex-col items-center text-center">
             <h1 className="text-xl sm:text-2xl font-bold mb-2">✅ Result</h1>
             <p className="text-zinc-700 dark:text-zinc-300 text-base sm:text-lg">
               You are 100% free to chat with me tonight. 🩷
