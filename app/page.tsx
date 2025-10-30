@@ -18,7 +18,7 @@ export default function Home() {
     setMessage("Great, come back to whatsapp and let start chating");
   };
 
-  const moveNoButton = (clientX: number, clientY: number) => {
+  const moveNoButton = (clientX: number, clientY: number, mode: "mouse" | "touch" = "mouse") => {
     const container = containerRef.current;
     const noBtn = noBtnRef.current;
     if (!container || !noBtn) return;
@@ -27,7 +27,7 @@ export default function Home() {
     const btnRect = noBtn.getBoundingClientRect();
 
     // Random new position away from the pointer
-    const padding = 8;
+    const padding = mode === "touch" ? 4 : 8;
     const maxLeft = containerRect.width - btnRect.width - padding;
     const maxTop = containerRect.height - btnRect.height - padding;
 
@@ -38,14 +38,10 @@ export default function Home() {
     let newTop = relY < containerRect.height / 2 ? maxTop : padding;
 
     // Add playful jitter
-    newLeft = Math.min(
-      maxLeft,
-      Math.max(padding, newLeft + (Math.random() * 120 - 60))
-    );
-    newTop = Math.min(
-      maxTop,
-      Math.max(padding, newTop + (Math.random() * 90 - 45))
-    );
+    const jitterX = mode === "touch" ? (Math.random() * 260 - 130) : (Math.random() * 120 - 60);
+    const jitterY = mode === "touch" ? (Math.random() * 180 - 90) : (Math.random() * 90 - 45);
+    newLeft = Math.min(maxLeft, Math.max(padding, newLeft + jitterX));
+    newTop = Math.min(maxTop, Math.max(padding, newTop + jitterY));
 
     // Switch to absolute positioning inside the container when evading
     if (!isNoAbsolute) setIsNoAbsolute(true);
@@ -54,7 +50,7 @@ export default function Home() {
   };
 
   const onNoHover: React.MouseEventHandler<HTMLButtonElement> = (e) => {
-    moveNoButton(e.clientX, e.clientY);
+    moveNoButton(e.clientX, e.clientY, "mouse");
   };
 
   const onContainerMove: React.MouseEventHandler<HTMLDivElement> = (e) => {
@@ -69,13 +65,13 @@ export default function Home() {
       e.clientY > rect.top - proximity &&
       e.clientY < rect.bottom + proximity
     ) {
-      moveNoButton(e.clientX, e.clientY);
+      moveNoButton(e.clientX, e.clientY, "mouse");
     }
   };
 
   const onNoTouch: React.TouchEventHandler<HTMLButtonElement> = (e) => {
     const t = e.touches[0];
-    if (t) moveNoButton(t.clientX, t.clientY);
+    if (t) moveNoButton(t.clientX, t.clientY, "touch");
   };
 
   const onContainerTouchMove: React.TouchEventHandler<HTMLDivElement> = (e) => {
@@ -91,7 +87,7 @@ export default function Home() {
       t.clientY > rect.top - proximity &&
       t.clientY < rect.bottom + proximity
     ) {
-      moveNoButton(t.clientX, t.clientY);
+      moveNoButton(t.clientX, t.clientY, "touch");
     }
   };
 
