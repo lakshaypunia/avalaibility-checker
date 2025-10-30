@@ -15,14 +15,10 @@ export default function Home() {
   }, []);
 
   const handleYes = () => {
-    setMessage("Great! Come back to WhatsApp and let’s start chatting 😉");
+    setMessage("Great, come to whatsapp and let start chatting");
   };
 
-  const moveNoButton = (
-    clientX: number,
-    clientY: number,
-    mode: "mouse" | "touch" = "mouse"
-  ) => {
+  const moveNoButton = (clientX: number, clientY: number) => {
     const container = containerRef.current;
     const noBtn = noBtnRef.current;
     if (!container || !noBtn) return;
@@ -30,165 +26,84 @@ export default function Home() {
     const containerRect = container.getBoundingClientRect();
     const btnRect = noBtn.getBoundingClientRect();
 
+    // Random new position away from the pointer
     const padding = 8;
     const maxLeft = containerRect.width - btnRect.width - padding;
     const maxTop = containerRect.height - btnRect.height - padding;
 
-    // Button center relative to container
-    const btnCenterX =
-      btnRect.left - containerRect.left + btnRect.width / 2;
-    const btnCenterY =
-      btnRect.top - containerRect.top + btnRect.height / 2;
-
-    // Pointer position relative to container
+    // Compute a position opposite to the pointer with some randomness
     const relX = clientX - containerRect.left;
     const relY = clientY - containerRect.top;
+    let newLeft = relX < containerRect.width / 2 ? maxLeft : padding;
+    let newTop = relY < containerRect.height / 2 ? maxTop : padding;
 
-    // Direction away from pointer
-    let dx = btnCenterX - relX;
-    let dy = btnCenterY - relY;
-    const len = Math.max(1, Math.hypot(dx, dy));
-    dx /= len;
-    dy /= len;
-
-    // Larger distance for touch
-    const baseMin = mode === "touch" ? 260 : 160;
-    const baseMax = mode === "touch" ? 480 : 260;
-    const distance = baseMin + Math.random() * (baseMax - baseMin);
-
-    // Random angle
-    const angleJitter = (Math.random() - 0.5) * (Math.PI / 3); // ±30°
-    const cos = Math.cos(angleJitter);
-    const sin = Math.sin(angleJitter);
-    const jx = dx * cos - dy * sin;
-    const jy = dx * sin + dy * cos;
-
-    // Proposed new center
-    let proposedX = btnCenterX + jx * distance;
-    let proposedY = btnCenterY + jy * distance;
-
-    // Clamp within container
-    let newLeft = Math.min(
+    // Add playful jitter
+    newLeft = Math.min(
       maxLeft,
-      Math.max(padding, proposedX - btnRect.width / 2)
+      Math.max(padding, newLeft + (Math.random() * 120 - 60))
     );
-    let newTop = Math.min(
+    newTop = Math.min(
       maxTop,
-      Math.max(padding, proposedY - btnRect.height / 2)
+      Math.max(padding, newTop + (Math.random() * 90 - 45))
     );
 
-    // Check proximity — if too close, jump to random corner
-    const proximity = mode === "touch" ? 140 : 80;
-    const nearPointer =
-      relX > newLeft - proximity &&
-      relX < newLeft + btnRect.width + proximity &&
-      relY > newTop - proximity &&
-      relY < newTop + btnRect.height + proximity;
-
-    if (nearPointer) {
-      const corners = [
-        { left: padding, top: padding },
-        { left: maxLeft, top: padding },
-        { left: padding, top: maxTop },
-        { left: maxLeft, top: maxTop },
-      ];
-      const randomCorner =
-        corners[Math.floor(Math.random() * corners.length)];
-      newLeft = randomCorner.left;
-      newTop = randomCorner.top;
-    }
-
-    // ✅ Screen-edge safety — make sure it never moves outside the viewport
-    const safeLeft = Math.min(
-      containerRect.width - btnRect.width - padding,
-      Math.max(padding, newLeft)
-    );
-    const safeTop = Math.min(
-      containerRect.height - btnRect.height - padding,
-      Math.max(padding, newTop)
-    );
-
+    // Switch to absolute positioning inside the container when evading
     if (!isNoAbsolute) setIsNoAbsolute(true);
-    noBtn.style.left = `${safeLeft}px`;
-    noBtn.style.top = `${safeTop}px`;
+    noBtn.style.left = `${newLeft}px`;
+    noBtn.style.top = `${newTop}px`;
   };
 
-  // Mouse + Touch handlers
   const onNoHover: React.MouseEventHandler<HTMLButtonElement> = (e) => {
-    moveNoButton(e.clientX, e.clientY, "mouse");
+    moveNoButton(e.clientX, e.clientY);
   };
 
   const onContainerMove: React.MouseEventHandler<HTMLDivElement> = (e) => {
+    // If cursor comes close again, keep dodging
     const noBtn = noBtnRef.current;
     if (!noBtn) return;
     const rect = noBtn.getBoundingClientRect();
-    const proximity = 64;
+    const proximity = 64; // distance to start moving
     if (
       e.clientX > rect.left - proximity &&
       e.clientX < rect.right + proximity &&
       e.clientY > rect.top - proximity &&
       e.clientY < rect.bottom + proximity
     ) {
-      moveNoButton(e.clientX, e.clientY, "mouse");
+      moveNoButton(e.clientX, e.clientY);
     }
   };
 
   const onNoTouch: React.TouchEventHandler<HTMLButtonElement> = (e) => {
     const t = e.touches[0];
-    if (t) moveNoButton(t.clientX, t.clientY, "touch");
-  };
-
-  const onContainerTouchMove: React.TouchEventHandler<HTMLDivElement> = (e) => {
-    const t = e.touches[0];
-    if (!t) return;
-    const noBtn = noBtnRef.current;
-    if (!noBtn) return;
-    const rect = noBtn.getBoundingClientRect();
-    const proximity = 72;
-    if (
-      t.clientX > rect.left - proximity &&
-      t.clientX < rect.right + proximity &&
-      t.clientY > rect.top - proximity &&
-      t.clientY < rect.bottom + proximity
-    ) {
-      moveNoButton(t.clientX, t.clientY, "touch");
-    }
+    if (t) moveNoButton(t.clientX, t.clientY);
   };
 
   return (
-    <div className="min-h-dvh w-full bg-gradient-to-b from-pink-50 via-white to-indigo-50 flex items-center justify-center px-4 py-6">
-      <main className="w-full max-w-2xl h-dvh flex flex-col items-center justify-center rounded-2xl bg-white/80 backdrop-blur-lg shadow-2xl p-6">
+    <div className="min-h-dvh w-full bg-gradient-to-b from-pink-50 via-white to-indigo-50 dark:from-zinc-900 dark:via-black dark:to-zinc-900 flex items-center justify-center px-4 py-10">
+      <main className="w-full max-w-2xl rounded-2xl bg-white/80 dark:bg-white/5 backdrop-blur-lg shadow-2xl p-6 sm:p-8">
         {loading ? (
-          <div
-            className="flex flex-col items-center justify-center gap-4 py-16"
-            aria-live="polite"
-          >
-            <div className="h-12 w-12 animate-spin rounded-full border-4 border-zinc-200 border-t-pink-500" />
-            <p className="text-lg font-semibold text-zinc-700">
-              Scanning availability...
-            </p>
+          <div className="flex flex-col items-center justify-center gap-4 py-16" aria-live="polite">
+            <div className="h-14 w-14 animate-spin rounded-full border-4 border-zinc-200 border-t-pink-500 dark:border-zinc-800 dark:border-t-pink-400" />
+            <p className="text-lg font-semibold text-zinc-700 dark:text-zinc-200">Scanning availability...</p>
           </div>
         ) : (
-          <div className="flex flex-col items-center text-center">
-            <h1 className="text-2xl font-bold mb-2">✅ Result</h1>
-            <p className="text-zinc-700 text-lg">
+          <div className="flex flex-col">
+            <h1 className="text-2xl font-bold mb-1">✅ Result</h1>
+            <p className="text-zinc-700 dark:text-zinc-300">
               You are 100% free to chat with me tonight. 🩷
             </p>
-            <p className="text-zinc-500 mb-5 text-base">
-              Press YES to confirm your feelings.
-            </p>
+            <p className="text-zinc-500 dark:text-zinc-400 mb-5">Press YES to confirm your feelings.</p>
 
             <div
               ref={containerRef}
               onMouseMove={onContainerMove}
-              onTouchMove={onContainerTouchMove}
-              className="relative min-h-32 flex flex-col sm:flex-row items-center gap-3 pb-6 overflow-hidden"
+              className="relative min-h-28 flex flex-wrap items-center gap-3 pb-6"
               aria-label="Choices"
             >
               <button
                 type="button"
                 onClick={handleYes}
-                className="w-full sm:w-auto rounded-full bg-emerald-400 hover:bg-emerald-300 text-emerald-950 font-bold px-6 py-4 shadow-md transition"
+                className="rounded-full bg-emerald-400 hover:bg-emerald-300 text-emerald-950 font-bold px-5 py-3 shadow-md active:translate-y-px transition"
               >
                 YES 😘
               </button>
@@ -197,9 +112,8 @@ export default function Home() {
                 type="button"
                 onMouseEnter={onNoHover}
                 onTouchStart={onNoTouch}
-                onTouchMove={onNoTouch}
                 className={[
-                  "rounded-full bg-rose-500 text-white font-bold px-6 py-4 shadow-md select-none transition",
+                  "rounded-full bg-rose-500 text-white font-bold px-5 py-3 shadow-md transition select-none",
                   isNoAbsolute ? "absolute" : "relative",
                 ].join(" ")}
                 style={isNoAbsolute ? { left: 0, top: 0 } : undefined}
@@ -208,9 +122,7 @@ export default function Home() {
               </button>
             </div>
 
-            <p className="min-h-7 text-center font-semibold text-pink-600 text-lg">
-              {message}
-            </p>
+            <p className="min-h-7 font-semibold text-pink-600 dark:text-pink-400">{message}</p>
           </div>
         )}
       </main>
